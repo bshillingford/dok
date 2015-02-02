@@ -38,9 +38,9 @@ local mdsearchpaths = splitpackagepath()
 
 local knownpkg = {}
 
-dok.inline = {}
+dok4itorch.inline = {}
 
-dok.colors = {
+dok4itorch.colors = {
    none = '\27[0m',
    black = '\27[0;30m',
    red = '\27[0;31m',
@@ -67,10 +67,10 @@ dok.colors = {
    _cyan = '\27[46m',
    _white = '\27[47m'
 }
-local c = dok.colors
+local c = dok4itorch.colors
 
 local style = {}
-function dok.usecolors()
+function dok4itorch.usecolors()
    style = {
       banner = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
       list = c.blue .. '> ' .. c.none,
@@ -85,7 +85,7 @@ function dok.usecolors()
       none = c.none
    }
 end
-function dok.dontusecolors()
+function dok4itorch.dontusecolors()
    style = {
       banner = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
       list = '> ',
@@ -100,7 +100,7 @@ function dok.dontusecolors()
       none = ''
    }
 end
-dok.usecolors()
+dok4itorch.usecolors()
 
 local function uncleanText(txt)
    txt = txt:gsub('&#39;', "'")
@@ -147,48 +147,9 @@ local function maxcols(str, cols)
    return res
 end
 
-function dok.stylize(html, package)
+function dok4itorch.stylize(html, package)
    local styled = html
-   -- (0) useless white space
-   styled = styled:gsub('^%s+','')
-   -- (1) function title
-   styled = '\n' .. style.banner .. '\n' .. styled
-   styled = styled:gsub('<h%d>(.-)</h%d>', function(title) return style.title .. title .. style.none .. '\n' end)
-   -- (2) lists
-   styled = styled:gsub('<ul>(.-)</ul>', function(list) 
-                                            return list:gsub('<li>%s*(.-)%s*</li>%s*', style.list .. '%1\n')
-                                         end)
-   -- (3) code
-   styled = styled:gsub('%s*<code>%s*(.-)%s*</code>%s*', style.code .. ' %1 ' .. style.none)
-   styled = styled:gsub('%s*<code class%="%S-">%s*(.-)%s*</code>%s*', style.pre .. ' %1 ' .. style.none)
-
-   -- (4) pre
-   styled = styled:gsub('<pre.->(.-)</pre>', style.pre .. '%1' .. style.none)
-
-   -- (5) formatting
-   styled = styled:gsub('<em>(.-)</em>', style.em .. '%1' .. style.none)
-   styled = styled:gsub('<b>(.-)</b>', style.bold .. '%1' .. style.none)
-   styled = styled:gsub('<strong>(.-)</strong>', style.bold .. '%1' .. style.none)
-   styled = styled:gsub('//(.-)//', style.bold .. '%1' .. style.none)
-
-   -- (6) links
-   styled = styled:gsub('<a.->(.-)</a>', style.none .. '%1' .. style.none)
-   -- (7) images
-   styled = styled:gsub('<img.-src="(.-)".->%s*', 
-                         style.img .. 'image: file://' 
-                         .. paths.concat(package,'%1') -- OUCH DEBUG paths.install_dokmedia,
-                         .. style.none .. '\n')
-   -- (-) paragraphs
-   styled = styled:gsub('<p>', '\n')
-   styled = styled:gsub('</p>', '')
-
-   -- (-) special chars
-   styled = uncleanText(styled)
-   -- (-) max columns
-   styled = maxcols(styled)
-   -- (-) conclude
-   styled = styled:gsub('%s*$','')
-   --styled = styled .. '\n' .. style.banner
+   -- TODO: put modifications to the HTML here if needed
    return styled
 end
 
@@ -201,7 +162,7 @@ local function adddok(...)
    return table.concat(tt,'\n')
 end
 
-function dok.html2funcs(html, package)
+function dok4itorch.html2funcs(html, package)
 --   print('processing -- package', package)
    local sections = {level=0}
    local csection = sections
@@ -270,7 +231,7 @@ function dok.html2funcs(html, package)
             --         print('************** FOUND', section.anchor, package)
             --         print(txt)
             --         print('********************')
-            funcs[key] = adddok(funcs[key], dok.stylize(txt, package))
+            funcs[key] = adddok(funcs[key], dok4itorch.stylize(txt, package))
          end
       end
       for i=1,#section do
@@ -289,7 +250,7 @@ function dok.html2funcs(html, package)
 --       print('T/B', title, body)
 --       for func in body:gfind('<a name="' .. package .. '%.(.-)">.-</a>') do
 --          if func then
---             funcs[func] = adddok(funcs[func],dok.stylize(title .. '\n' .. body:gsub('<a.-name="(.-)"></a>','') , package))
+--             funcs[func] = adddok(funcs[func],dok4itorch.stylize(title .. '\n' .. body:gsub('<a.-name="(.-)"></a>','') , package))
 --          end
 --       end
 --    end
@@ -342,7 +303,7 @@ local function mditerator(path)
 
 end
 
-function dok.refresh()
+function dok4itorch.refresh()
    for pkgname, path in packageiterator() do
       local pkgtbl = _G[pkgname] or package.loaded[pkgname]
       if pkgtbl and not knownpkg[pkgname] then
@@ -351,23 +312,23 @@ function dok.refresh()
             local f = io.open(file)
             if f then
                local content = f:read('*all')
-               local html = dok.dok2html(content)
-               local funcs = dok.html2funcs(html, pkgname)
+               local html = dok4itorch.dok2html(content)
+               local funcs = dok4itorch.html2funcs(html, pkgname)
                if type(pkgtbl) ~= 'table' and _G._torchimport then 
                   -- unsafe import, use protected import
                   pkgtbl = _G._torchimport[pkgname]
                end
                if pkgtbl and type(pkgtbl) == 'table' then
                   -- level 0: the package itself
-                  dok.inline[pkgtbl] = dok.inline[pkgtbl] or funcs['dok'] or funcs['reference.dok'] or funcs['overview.dok']
+                  dok4itorch.inline[pkgtbl] = dok4itorch.inline[pkgtbl] or funcs['dok4itorch'] or funcs['reference.dok4itorch'] or funcs['overview.dok4itorch']
                   -- next levels
                   for key,symb in pairs(pkgtbl) do
                      -- level 1: global functions and objects
                      local entry = (key):lower()
 --                     print(entry, funcs[entry] ~= nil)
-                     if funcs[entry] or funcs[entry..'.dok'] then
+                     if funcs[entry] or funcs[entry..'.dok4itorch'] then
                         local sym = string2symbol(pkgname .. '.' .. key)
-                        dok.inline[sym] = adddok(funcs[entry..'.dok'],funcs[entry])
+                        dok4itorch.inline[sym] = adddok(funcs[entry..'.dok4itorch'],funcs[entry])
                      end
                      -- level 2: objects' methods
                      if type(pkgtbl[key]) == 'table' then
@@ -381,10 +342,10 @@ function dok.refresh()
                         end
                         for subkey,subsymb in pairs(entries) do
                            local entry = (key .. '.' .. subkey):lower()
-                           if funcs[entry] or funcs[entry..'.dok'] then
+                           if funcs[entry] or funcs[entry..'.dok4itorch'] then
                               local sym = string2symbol(pkgname .. '.' .. key .. '.' .. subkey)
-                              dok.inline[sym] = adddok(funcs[entry..'.dok'],funcs[entry])
-                              --dok.inline[string2symbol(pkgname .. '.' .. key .. '.' .. subkey)] = funcs[entry]
+                              dok4itorch.inline[sym] = adddok(funcs[entry..'.dok4itorch'],funcs[entry])
+                              --dok4itorch.inline[string2symbol(pkgname .. '.' .. key .. '.' .. subkey)] = funcs[entry]
                            end
                         end
                      end
@@ -398,15 +359,9 @@ end
 
 --------------------------------------------------------------------------------
 -- help() is the main user-side function: prints help for any given
--- symbol that has an anchor defined in a .dok file.
+-- symbol that has an anchor defined in a .dok4itorch file.
 --------------------------------------------------------------------------------
-function dok.help(symbol, asstring)
-   -- color detect
-   if qtide then
-      dok.dontusecolors()
-   else
-      dok.usecolors()
-   end
+function dok4itorch.help(symbol, asstring)
    -- no symbol? global help
    if not symbol then
       print(style.banner)
@@ -419,35 +374,36 @@ function dok.help(symbol, asstring)
    end
    -- always refresh (takes time, but insures that 
    -- we generate help for all packages loaded)
-   dok.refresh()
+   dok4itorch.refresh()
    if type(symbol) == 'string' then
       symbol = string2symbol(symbol)
    end
-   local inline = dok.inline[symbol]
+   local inline = dok4itorch.inline[symbol]
    if asstring then
       return inline
    else
       if inline then
          --print(style.banner)
-         print(inline)
-         print(style.banner)
+         --print(inline)
+         --print(style.banner)
+         itorch.html(inline)
       else
 	 print('undocumented symbol')
       end
    end
 end
 
-rawset(_G, 'help', dok.help)
+rawset(_G, 'help', dok4itorch.help)
 
 --------------------------------------------------------------------------------
 -- browse() is a simpler function that simply triggers a browser
 --------------------------------------------------------------------------------
-function dok.browse()
+function dok4itorch.browse()
    -- color detect
    if qtide then
-      dok.dontusecolors()
+      dok4itorch.dontusecolors()
    else
-      dok.usecolors()
+      dok4itorch.usecolors()
    end
    -- trigger browser
    require 'qtide'
@@ -456,7 +412,7 @@ function dok.browse()
    qtide = nil
 end
 
-rawset(_G, 'browse', dok.browse)
+rawset(_G, 'browse', dok4itorch.browse)
 
 --------------------------------------------------------------------------------
 -- standard usage function: used to display automated help for functions
@@ -466,7 +422,7 @@ rawset(_G, 'browse', dok.browse)
 -- @param example      usage example
 -- @param ...          [optional] arguments
 --------------------------------------------------------------------------------
-function dok.usage(funcname, description, example, ...)
+function dok4itorch.usage(funcname, description, example, ...)
    local str = ''
 
    local help = help(string2symbol(funcname), true)
@@ -550,7 +506,7 @@ end
 -- standard argument function: used to handle named arguments, and 
 -- display automated help for functions
 --------------------------------------------------------------------------------
-function dok.unpack(args, funcname, description, ...)
+function dok4itorch.unpack(args, funcname, description, ...)
    -- put args in table
    local defs = {...}
 
@@ -563,7 +519,7 @@ function dok.unpack(args, funcname, description, ...)
                            .. defs[1].arg .. '=' .. defs[1].type .. '}\n'
                         example = example .. funcname .. '(' .. defs[1].type .. ',' .. ' ...)'
                      end
-                     return dok.usage(funcname, description, example, {tabled=defs})
+                     return dok4itorch.usage(funcname, description, example, {tabled=defs})
                   end
    local usage = {}
    setmetatable(usage, {__tostring=fusage})
@@ -610,7 +566,7 @@ function dok.unpack(args, funcname, description, ...)
 
    -- stupid lua bug: we return all args by hand
    if dargs[65] then
-      error('<dok.unpack> oups, cant deal with more than 64 arguments :-)')
+      error('<dok4itorch.unpack> oups, cant deal with more than 64 arguments :-)')
    end
 
    -- return modified args
@@ -621,7 +577,7 @@ end
 -- prints an error with nice formatting. If domain is provided, it is used as
 -- following: <domain> msg
 --------------------------------------------------------------------------------
-function dok.error(message, domain)
+function dok4itorch.error(message, domain)
    if domain then
       message = '<' .. domain .. '> ' .. message
    end

@@ -1,7 +1,7 @@
 local sd = require 'sundown'
 
-dok = {}
+dok4itorch = {}
 
-require 'dok.inline'
+require 'dok4itorch.inline'
 
-dok.dok2html = sd.render
+dok4itorch.dok2html = sd.render
