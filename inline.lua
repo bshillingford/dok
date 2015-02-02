@@ -386,7 +386,8 @@ function dok4itorch.help(symbol, asstring)
          --print(style.banner)
          --print(inline)
          --print(style.banner)
-         itorch.html(inline)
+
+         itorch.html((inline:gsub('\n','\\n')))
       else
 	 print('undocumented symbol')
       end
